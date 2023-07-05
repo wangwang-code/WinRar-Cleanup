@@ -11,7 +11,7 @@ namespace WinRAR垃圾清理
 {
     public partial class MainForm : Form
     {
-        private string pattern = "^Rar\\$";
+        private string pattern = "^Rar\\$[A-Za-z0-9]+";
         private List<DriveInfo> drives;
         private BackgroundWorker backgroundWorker;
         private List<string> output;
@@ -69,9 +69,11 @@ namespace WinRAR垃圾清理
                 }
             };
         }
-
         private void startButton_Click(object sender, EventArgs e)
         {
+            // 清空结果列表框
+            resultListBox.Items.Clear();
+
             if (!backgroundWorker.IsBusy)
             {
                 // 禁用驱动器列表框
@@ -92,8 +94,8 @@ namespace WinRAR垃圾清理
                     MessageBox.Show("请选择至少一个驱动器。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     // 启用驱动器列表框
                     driveListBox.Enabled = true;
-                    selectAllButton.Enabled= true;
-                    deselectAllButton.Enabled= true;
+                    selectAllButton.Enabled = true;
+                    deselectAllButton.Enabled = true;
                     startButton.Enabled = true;
                     cancelButton.Enabled = false;
                     return;
@@ -103,8 +105,6 @@ namespace WinRAR垃圾清理
                 backgroundWorker.RunWorkerAsync(new WorkerArguments(selectedDrives, !deleteFoldersCheckBox.Checked));
             }
         }
-
-
         private void cancelButton_Click(object sender, EventArgs e)
         {
             if (backgroundWorker.IsBusy && !backgroundWorker.CancellationPending)
