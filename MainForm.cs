@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -42,9 +43,27 @@ namespace WinRAR垃圾清理
             backgroundWorker.ProgressChanged += BackgroundWorker_ProgressChanged;
             backgroundWorker.RunWorkerCompleted += BackgroundWorker_RunWorkerCompleted;
         }
+        private void MainForm_Resize(object sender, EventArgs e)
+        {
+            if (this.WindowState == FormWindowState.Minimized)
+            {
+                // 隐藏窗口并显示任务栏图标
+                this.Hide();
+                notifyIcon1.Visible = true;
+            }
+        }
+        private void notifyIcon1_DoubleClick(object sender, EventArgs e)
+        {
+            this.Show();
+            this.Activate();
+            notifyIcon1.Visible = false; // 隐藏任务栏图标
+            this.WindowState = FormWindowState.Normal;
+        }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
+            this.Resize += MainForm_Resize;
+            notifyIcon1.Click += notifyIcon1_DoubleClick;
             // 获取所有驱动器
             drives = DriveInfo.GetDrives().Where(d => d.DriveType == DriveType.Fixed).ToList();
 
@@ -66,6 +85,19 @@ namespace WinRAR垃圾清理
                 for (int i = 0; i < driveListBox.Items.Count; i++)
                 {
                     driveListBox.SetItemChecked(i, false);
+                }
+            };
+            about.Click += (s, ev) =>
+            {
+                string message = "扫描所有驱动器并删除（非抹除，可恢复）正则匹配 “^Rar\\$[A-Za-z0-9]+”的文件夹 \n点是将打开源码链接";
+                string caption = "关于";
+
+                DialogResult result = MessageBox.Show(message, caption, MessageBoxButtons.YesNo, MessageBoxIcon.Information,
+                    MessageBoxDefaultButton.Button1, MessageBoxOptions.DefaultDesktopOnly);
+
+                if (result == DialogResult.Yes)
+                {
+                    Process.Start(new ProcessStartInfo("https://github.com/wangwang-code/WinRar-Cleanup") { UseShellExecute = true });
                 }
             };
         }
@@ -194,7 +226,7 @@ namespace WinRAR垃圾清理
             }
             else
             {
-                statusLabel.Text = output.Count == 0 ? "未找到匹配的文件夹。" : "文件夹列表:";
+                statusLabel.Text = output.Count == 0 ? "没有垃圾文件夹" : "垃圾文件夹——>";
 
                 foreach (var item in output)
                 {

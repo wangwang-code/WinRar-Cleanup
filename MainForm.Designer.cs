@@ -56,6 +56,7 @@ namespace WinRAR垃圾清理
 
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             startButton = new Button();
             cancelButton = new Button();
@@ -66,6 +67,9 @@ namespace WinRAR垃圾清理
             deleteFoldersCheckBox = new CheckBox();
             resultListBox = new ListBox();
             copyButton = new Button();
+            notifyIcon1 = new NotifyIcon(components);
+            label1 = new Label();
+            about = new Button();
             SuspendLayout();
             // 
             // startButton
@@ -127,10 +131,27 @@ namespace WinRAR垃圾清理
             copyButton.UseVisualStyleBackColor = true;
             copyButton.Click += copyButton_Click;
             // 
+            // notifyIcon1
+            // 
+            resources.ApplyResources(notifyIcon1, "notifyIcon1");
+            // 
+            // label1
+            // 
+            resources.ApplyResources(label1, "label1");
+            label1.Name = "label1";
+            // 
+            // about
+            // 
+            resources.ApplyResources(about, "about");
+            about.Name = "about";
+            about.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             AutoScaleMode = AutoScaleMode.Font;
+            Controls.Add(about);
+            Controls.Add(label1);
             Controls.Add(copyButton);
             Controls.Add(resultListBox);
             Controls.Add(deleteFoldersCheckBox);
@@ -156,5 +177,8 @@ namespace WinRAR垃圾清理
         private CheckBox deleteFoldersCheckBox;
         public ListBox resultListBox;
         private Button copyButton;
+        public NotifyIcon notifyIcon1;
+        private Label label1;
+        private Button about;
     }
 }
