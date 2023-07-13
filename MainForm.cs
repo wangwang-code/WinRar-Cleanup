@@ -12,13 +12,12 @@ namespace WinRAR垃圾清理
 {
     public partial class MainForm : Form
     {
+        // 正则表达式用于匹配WinRAR创建的临时文件夹
         private string pattern = "^Rar\\$[A-Za-z0-9]+";
         private List<DriveInfo> drives;
         private BackgroundWorker backgroundWorker;
         private List<string> output;
 
-
-        // 在 MainForm 类的顶部定义 WorkerArguments 类
         public class WorkerArguments
         {
             public List<string> SelectedDrives { get; set; }
@@ -35,28 +34,28 @@ namespace WinRAR垃圾清理
         {
             InitializeComponent();
 
-            // 初始化后台任务
             backgroundWorker = new BackgroundWorker();
             backgroundWorker.WorkerReportsProgress = true;
-            backgroundWorker.WorkerSupportsCancellation = true; // 添加此行
+            backgroundWorker.WorkerSupportsCancellation = true;
             backgroundWorker.DoWork += BackgroundWorker_DoWork;
             backgroundWorker.ProgressChanged += BackgroundWorker_ProgressChanged;
             backgroundWorker.RunWorkerCompleted += BackgroundWorker_RunWorkerCompleted;
         }
+
         private void MainForm_Resize(object sender, EventArgs e)
         {
             if (this.WindowState == FormWindowState.Minimized)
             {
-                // 隐藏窗口并显示任务栏图标
                 this.Hide();
                 notifyIcon1.Visible = true;
             }
         }
+
         private void notifyIcon1_DoubleClick(object sender, EventArgs e)
         {
             this.Show();
             this.Activate();
-            notifyIcon1.Visible = false; // 隐藏任务栏图标
+            notifyIcon1.Visible = false;
             this.WindowState = FormWindowState.Normal;
         }
 
@@ -64,32 +63,18 @@ namespace WinRAR垃圾清理
         {
             this.Resize += MainForm_Resize;
             notifyIcon1.Click += notifyIcon1_DoubleClick;
-            // 获取所有驱动器
+
             drives = DriveInfo.GetDrives().Where(d => d.DriveType == DriveType.Fixed).ToList();
 
-            // 显示驱动器列表
             driveListBox.Items.AddRange(drives.Select(d => d.Name).ToArray());
 
-            // 全选按钮点击事件处理
-            selectAllButton.Click += (s, ev) =>
-            {
-                for (int i = 0; i < driveListBox.Items.Count; i++)
-                {
-                    driveListBox.SetItemChecked(i, true);
-                }
-            };
+            selectAllButton.Click += (s, ev) => SetAllItemsChecked(true);
 
-            // 取消选择按钮点击事件处理
-            deselectAllButton.Click += (s, ev) =>
-            {
-                for (int i = 0; i < driveListBox.Items.Count; i++)
-                {
-                    driveListBox.SetItemChecked(i, false);
-                }
-            };
+            deselectAllButton.Click += (s, ev) => SetAllItemsChecked(false);
+
             about.Click += (s, ev) =>
             {
-                string message = "扫描所有驱动器并删除（非抹除，可恢复）正则匹配 “^Rar\\$[A-Za-z0-9]+”的文件夹 \n点是将打开源码链接";
+                string message = "扫描所有驱动器并删除（非抹除，可恢复）正则匹配 “^Rar\\$[A-Za-z0-9]+”的文件夹 \n点���将打开源码链接";
                 string caption = "关于";
 
                 DialogResult result = MessageBox.Show(message, caption, MessageBoxButtons.YesNo, MessageBoxIcon.Information,
@@ -101,21 +86,18 @@ namespace WinRAR垃圾清理
                 }
             };
         }
+
         private void startButton_Click(object sender, EventArgs e)
         {
-            // 清空结果列表框
             resultListBox.Items.Clear();
 
             if (!backgroundWorker.IsBusy)
             {
-                // 禁用驱动器列表框
                 driveListBox.Enabled = false;
                 selectAllButton.Enabled = false;
                 deselectAllButton.Enabled = false;
 
-                // 清空输出
                 output = new List<string>();
-                // 禁用开始按钮和取消按钮
                 startButton.Enabled = false;
                 cancelButton.Enabled = true;
 
@@ -124,7 +106,6 @@ namespace WinRAR垃圾清理
                 if (selectedDrives.Count == 0)
                 {
                     MessageBox.Show("请选择至少一个驱动器。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    // 启用驱动器列表框
                     driveListBox.Enabled = true;
                     selectAllButton.Enabled = true;
                     deselectAllButton.Enabled = true;
@@ -133,17 +114,15 @@ namespace WinRAR垃圾清理
                     return;
                 }
 
-                // 启动后台任务
                 backgroundWorker.RunWorkerAsync(new WorkerArguments(selectedDrives, !deleteFoldersCheckBox.Checked));
             }
         }
+
         private void cancelButton_Click(object sender, EventArgs e)
         {
             if (backgroundWorker.IsBusy && !backgroundWorker.CancellationPending)
             {
-                // 取消后台任务
                 backgroundWorker.CancelAsync();
-
             }
         }
 
@@ -162,9 +141,10 @@ namespace WinRAR垃圾清理
                 var driveInfo = drives.First(d => d.Name == driveName);
                 var rootPath = driveInfo.RootDirectory.FullName;
 
-                // 添加输出语句
                 var message = "正在扫描驱动器" + driveName;
-                statusLabel.Invoke(new Action(() => statusLabel.Text = message));
+                statusLabel.Invoke((MethodInvoker)delegate {
+                    statusLabel.Text = message; // 在UI线程上更新statusLabel
+                });
 
                 worker.ReportProgress(0);
                 Thread.Sleep(1500);
@@ -174,12 +154,9 @@ namespace WinRAR垃圾清理
                 foreach (var folderPath in folders)
                 {
                     var folderName = Path.GetFileName(folderPath);
-
-                    if (Regex.IsMatch(folderName, pattern, RegexOptions.IgnoreCase)) // 使用正则表达式匹配
+                    if (Regex.IsMatch(folderName, pattern, RegexOptions.IgnoreCase))
                     {
-                        // 将找到的文件夹路径传递给ProgressChanged事件
                         worker.ReportProgress(0, folderPath);
-                        // 判断是否删除文件夹
                         if (arguments.DeleteFolders)
                         {
                             try
@@ -189,7 +166,10 @@ namespace WinRAR垃圾清理
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine(ex.Message);
+                                // 记录错误日志
+                                File.AppendAllText("error.log", ex.ToString());
+                                // 更简洁明了的错误消息
+                                MessageBox.Show($"无法删除文件夹：{folderPath}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             }
                         }
                         else
@@ -202,22 +182,19 @@ namespace WinRAR垃圾清理
             worker.ReportProgress(0);
         }
 
-
         private void BackgroundWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             if (e.UserState != null)
             {
                 var folderPath = e.UserState.ToString();
-                // 在UI线程上更新resultListBox
-                resultListBox.Items.Add($"找到：{folderPath}");
-                // 添加以下代码，以显示删除文件夹的消息
-                if (output.Count > 0)
-                {
-                    var lastMessage = output.Last();
-                    resultListBox.Items.Add(lastMessage);
-                }
+
+                resultListBox.Invoke((MethodInvoker)delegate {
+                    // 在UI线程上更新resultListBox
+                    resultListBox.Items.Add($"找到：{folderPath}");
+                });
             }
         }
+
         private void BackgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (e.Cancelled)
@@ -230,18 +207,24 @@ namespace WinRAR垃圾清理
 
                 foreach (var item in output)
                 {
-                    resultListBox.Items.Add(item);
+                    resultListBox.Items.Add(item); // 在此处添加output列表中的所有删除文件夹的消息
                 }
             }
 
             // 启用开始按钮和取消按钮
             startButton.Enabled = true;
             cancelButton.Enabled = false;
-
-            // 启用驱动器列表框
             driveListBox.Enabled = true;
             selectAllButton.Enabled = true;
             deselectAllButton.Enabled = true;
+        }
+
+        private void SetAllItemsChecked(bool isChecked)
+        {
+            for (int i = 0; i < driveListBox.Items.Count; i++)
+            {
+                driveListBox.SetItemChecked(i, isChecked);
+            }
         }
     }
 }
