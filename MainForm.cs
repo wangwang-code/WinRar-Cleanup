@@ -74,7 +74,7 @@ namespace WinRAR垃圾清理
 
             about.Click += (s, ev) =>
             {
-                string message = "扫描所有驱动器并删除（非抹除，可恢复）正则匹配 “^Rar\\$[A-Za-z0-9]+”的文件夹 \n点���将打开源码链接";
+                string message = "扫描所有驱动器并删除（非抹除，可恢复）正则匹配 “^Rar\\$[A-Za-z0-9]+”的文件夹 \n点是将打开源码链接";
                 string caption = "关于";
 
                 DialogResult result = MessageBox.Show(message, caption, MessageBoxButtons.YesNo, MessageBoxIcon.Information,
